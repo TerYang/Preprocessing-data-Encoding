@@ -1,3 +1,12 @@
+#coding:utf-8
+"""
+license for studing and Non-profit organization and group.
+all right reserved by adau22@163.com,owned by TerYang
+func:   input the data file address,find the difference between data before and after processing,
+        write down the summary report,at the same time,every compared with an unique type list int values,to check
+        whatever had changed.
+        entry: multipool(),the index of all address source data located and processed data located
+"""
 import pandas as pd
 import numpy as np
 import os
@@ -25,7 +34,7 @@ source_attr =["/home/gjj/PycharmProjects/ADA/data/CAN-Instrusion-dataset/",
               "/home/gjj/PycharmProjects/ADA/dealed_data/instrusion_data/",
               "/home/gjj/PycharmProjects/ADA/ID-P/ID_TIME/instrusion_data/",
               "/home/gjj/PycharmProjects/ADA/ID-P/ID_TIME_instrusion_data/"]
-dire_attr = "/home/gjj/PycharmProjects/ADA/check_data/"
+dire_attr = "/home/gjj/PycharmProjects/ADA/check_data/round2"
 
 if not os.path.exists(dire_attr):  # 如果保存模型参数的文件夹不存在则创建
     os.makedirs(dire_attr)
@@ -36,7 +45,7 @@ for s_attr in source_attr:
 
 
 def count_num(q,url,random_num, attr1):
-    data = pd.read_csv(url,sep='\s+',delimiter=',', header=None, engine='python', chunksize=10000,dtype=np.str)# ,dtype=np.str
+    data = pd.read_csv(url,sep='\s+',delimiter=',', header=None, engine='python', chunksize=5000,dtype=np.str)# ,dtype=np.str
     num = 0
 
     in_num = []
@@ -104,10 +113,11 @@ def multip(url):#(url_r1,url_w1,url_r2,url_w2)
         # lll1.to_csv(url_w1, sep=' ', index=False, header=False, )  # write_urlmode='a'
         # lll2.to_csv(url_w2, sep=' ', index=False, header=False,)  # write_url mode='a'
     else:
-        writeline(summ_attr,'diffrence of file name:{}--first file row:\t{}\t,second file row:\t{}'.format(attr1,nums[0], nums[1]))
+        writeline(summ_attr,'{}difference between first file row:{}\t,and second file row:{}'.format(attr1,nums[0], nums[1]))
         writeline(summ_attr,'first at:{}'.format(url_r1))
         writeline(summ_attr,'second at:{}'.format(url_r2))
         writeline(summ_attr, '*************************************************************************************')
+        writeline(summ_attr, '\t')
 
 
         print('diffrence : first file row\t{}\tsecond file row\t{}'.format(nums[0], nums[1]))
@@ -150,7 +160,7 @@ if __name__ == "__main__":
     multipool(0,1)
     multipool(1,2)
     multipool(2,3)
-
+    print("--all pools had finished!!--")
     # os.system("pstree -p " + str(os.getpid()))
     # #os.getpid()获取当前进程id     获取父进程id
 
