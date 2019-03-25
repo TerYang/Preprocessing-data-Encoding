@@ -1,83 +1,77 @@
 import pandas as pd
 import numpy as np
 import os
+from sklearn.preprocessing import MinMaxScaler
 
-np.set_printoptions(suppress=True)
+np.set_printoptions(suppress=False,precision=6)
 
-source_attr ="/home/gjj/PycharmProjects/ADA/dealed_data/instrusion_data/"
-dire_attr = "/home/gjj/PycharmProjects/ADA/ID-P/"
-attrs = os.listdir(source_attr)
-# print(attrs)
-if not os.path.exists(dire_attr):  # 如果保存模型参数的文件夹不存在则创建
-    os.makedirs(dire_attr)
+# source_addr ="/home/gjj/PycharmProjects/ADA/ID-P/"
+source_addr ="/home/gjj/PycharmProjects/ADA/ID-TIME_data/ID_TIME_instrusion_data/"
+dire_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/"
 
-def accumulation_id(piece,attr):
-    piece = piece.dropna(axis=1, how='all')  # how = ['any','all'] 丢弃空列
-    # """ print(o1.dtypes)
-    # 0    float64
-    # 1     object
-    # 2      int64
-    # 3     object
-    # """
-    ids = o1.iloc[:,1].values.astype(np.str)#提取id列
+addrs = os.listdir(source_addr)
 
-    # ids = ["00100","11001","00000","10001"]
-    for i, elem in enumerate(ids):
-        # print(type(elem[0]))
-        if elem[0] != '0' or elem[-2:] != "00":
-            yield list(attr,elem)
+print(addrs)
+if not os.path.exists(dire_addr):  # 如果保存模型参数的文件夹不存在则创建
+    os.makedirs(dire_addr)
 
+
+def batch(np_or_series):
+    """(value - mean )/rsqrt(variance) 数值减去均值之差除标准差,归一化后有负值"""
+    # mean_value = np.mean(np_or_series)
+    # std_value = np.std(np_or_series)
+    # np_or_series = (np_or_series - mean_value)/std_value
+    # print(np_or_series)
+    """归一化在一定范围内"""
+    # np.set_printoptions(suppress=True,precision=2)
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    print(np_or_series.shape)
+    np_or_series = scaler.fit_transform(np_or_series.reshape(-1, 1))
+    return np.around(np_or_series,decimals=2)#返回进度为小数点后两位
 
 if __name__ == "__main__":
 
-    for attr in attrs:
-        # if attr in had_dealed:
-        #     continue
-        print("current:",attr)
-        # continue
+    for addr in addrs:
+        print(addr)
 
-        read_url = source_attr + attr
-        dire_url = dire_attr + attr[0: attr.index('.')] + r"_ID.txt"
-        # print(read_url,'\n',dire_url)
-        # continue
-        # np.set_printoptions(suppress=True,precision=6)
-        data = pd.read_csv(read_url, sep=None, header=None, engine='python', chunksize=10000)#,dtype=np.str
+        read_url = source_addr + addr
+        dire_url = dire_addr + addr
+        data = pd.read_csv(read_url, sep=None, header=None, engine='python', chunksize=100)
+        # data = pd.read_csv(read_url, sep=None, header=None, engine='python')
 
-        count = 0
-        s1_fir_element = 0
-        for o1 in data:
-            count += 1
-            if count % 10 == 0:
-                print("loop:", count)
-            accumulation_id(o1,attr)
-        # exit()
+        time_max=0
+        """shape (100, 4),Index([0, 1, 2, 3], dtype='int64')
+        dtypes: 1     object
+                2      int64
+                3     object
+                dtype: object
+        """
+        # batch(data.loc[:, 0].values)
 
-            # print(type(ids))
-            # print(ids.dtype)
 
-            # arr = np.insert(o1.loc[:, 0].values, 0, s1_fir_element, axis=0)
-            # arr1 = arr[1:] - arr[:-1]  # calculate the time difference between before and after
-            # s1_fir_element = arr[-1]
-            # # print(len(arr1),arr1)
-            # # exit()
-            # # # f = lambda x: int(x)
-            # # s1_fir_element = arr[-1]
-            # # # print(s1_fir_element,o1.iloc[-1,0])
-            # # # exit()
-            # # s1 = pd.Series(arr[:-1],index=np.arange(indexOfDF))
-            # # s2 = pd.Series(arr[1:],index=np.arange(indexOfDF))
-            # # # print(s1,s2)
-            # # # exit()
-            # # o1.loc[:,0] = s2.sub(s1).values#s2-s1
-            # o1.loc[:, 0] = arr1  # set the columns 0 as the array arr1
-            # print("o1.loc[:,0]\t",o1.loc[:,0])
-            # print("values\t",o1.loc[:,0].values)
-            # exit()
-            # if count == 1:
-            #     o1.loc[0, 0] = 0
-            # if count==372:
-            #     print(s1, s2)
-            #     print(s2.sub(s1))
-            # print(o1.loc[:,0])
-            #     break
-            # o1.to_csv(dire_url, sep=' ', index=False, header=False, mode='a')  # write_url
+
+        # data = pd.read_csv(read_url,sep='\s+',delimiter=',', header=None, engine='python', chunksize=50,dtype=np.str)# shape(50, 1)
+        for j, o1 in enumerate(data):
+            if j != 0:
+                break
+            np1 = np.array(o1.loc[:8,3].values).astype(np.str)
+            print(np.replace(np1,None,fffxxxxx))
+
+
+
+            # o1 = pd.Series(o1.loc[:8,3])
+            # # print(o1.map({'None':0}))
+            # print(o1.replace([None],9))
+        #     """max vule at o1 used func:DataFrame.max([axis, skipna, level, …])"""
+        #     batch(o1.loc[:,0].values)
+        #     o1_max = o1.max()
+        #     max_value = o1_max.at[o1_max.index[0]]
+        #     print(max_value)
+        #     print(type(o1_max),o1_max.shape,o1_max.index)
+        #     # print(type(o1),o1.index,o1.columns,o1.shape,o1.dtypes)
+        #     # print(type(o1.loc[:,0]),o1.index,o1.columns,o1.shape,o1.loc[:,0].dtypes)
+        #     # <class 'pandas.core.series.Series'> RangeIndex(start=0, stop=100, step=1) Int64Index([0, 1, 2, 3], dtype='int64') (100, 4) float64
+        #     # print(type(o1.loc[:,3]),o1.index,o1.columns,o1.shape,o1.loc[:,3].dtypes)
+        #     #<class 'pandas.core.series.Series'> RangeIndex(start=0, stop=100, step=1) Int64Index([0, 1, 2, 3], dtype='int64') (100, 4) object
+        exit()
+    # data = pd.read_csv(read_url, sep=None, header=None, dtype=np.str, engine='python', chunksize=10000)  # ,dtype=np.str
