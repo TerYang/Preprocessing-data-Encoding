@@ -1,3 +1,8 @@
+"""
+读取原始的hacking 数据集,取出数据中的多余的ID bit为,转为十进制的数,DLC,content,flags 都转为10进制的数
+生成的数据没有经过归一化,时间为相同ID的时间间隔
+"""
+
 import pandas as pd
 import numpy as np
 import os
@@ -9,9 +14,11 @@ import time
 from sklearn.preprocessing import MinMaxScaler
 
 
-source_addr = "/home/gjj/PycharmProjects/ADA/raw_data/car-hacking-intrusion-dataset/origin-data/"
+# source_addr = "/home/gjj/PycharmProjects/ADA/raw_data/car-hacking-intrusion-dataset/origin-data/"
+source_addr = "/home/gjj/PycharmProjects/ADA/raw_data/car-hacking-intrusion-dataset/reclear/timscal/"
+# dire_addr = "/home/gjj/PycharmProjects/ADA/raw_data/car-hacking-intrusion-dataset/"
 dire_addr = "/home/gjj/PycharmProjects/ADA/raw_data/car-hacking-intrusion-dataset/"
-datim = 'reclear'
+datim = 'encoding'
 dire_addr = os.path.join(dire_addr,datim)
 if os.path.exists(dire_addr):
     pass
@@ -28,12 +35,13 @@ def writelog(content,filname=None):
             os.makedirs(path)
     except FileExistsError:
         pass
-    print(content)
+
     if filname:
         url_path = os.path.join(path, '{}.txt'.format(filname))
         with open(url_path, 'a', encoding='utf-8') as f:
             f.writelines('\n'+content + '\n')
-
+    else:
+        print(content)
 
 def Normalize(str_or_list,flag=None):#data.iloc[,:],传入全部内容，row index，message contents,id，dlc
     a1 = ['a', 'b', 'c', 'd', 'e', 'f']
@@ -265,19 +273,6 @@ def job(url):
         data1.loc[indexs,:] = np.around(contents, decimals=5)
     np.set_printoptions(suppress=True,precision=3)
 
-    ############   scaler time to [0,1]############################
-    # scaler = MinMaxScaler(feature_range=(-1, 1))
-    # scale_a = scaler.fit_transform(np.array(data.loc[:, 0].values.astype(np.float64)).reshape(-1, 1))
-    # scale_a = np.around(scale_a, decimals=3)
-    # writelog('finished {} {},scaler sizes {},ndim {}'.format(pid, filename, scale_a.shape,scale_a.ndim), filename)
-    # print(scale_a.shape,scale_a.ndim)
-
-    # try:
-    #     data1.loc[:,0] = scale_a
-    #     writelog('merge success',filename)
-    # except IndexError or ValueError:
-    #     writelog('merge error',filename)
-
     ############# write file ############################################
     data1.to_csv(write_url, sep=' ',index=False, header=False, mode='a', float_format='%.2f')  # write_url
 
@@ -289,6 +284,42 @@ def job(url):
     except NameError:
         writelog('Error at finishe writelog func,is finished',filename)
     writelog('{} finished at:{}'.format(filename,time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time()))),filename)
+
+
+def scaler(url):
+    """
+    func : scaler data to -1<->1
+    :param url:
+    :return:
+    """
+    pid = os.getpid()
+
+    read_url = url[0]
+    write_url = url[1]
+    filename = os.path.splitext(os.path.basename(read_url))[0]
+    data = pd.read_csv(read_url, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8')
+    columns = [i for i in range(data.shape[1])]
+
+    writelog('processing: {},file: {},sizes: {} ,start at:{}'.format(pid, filename, data.shape,time.strftime(
+        '%Y-%m-%d,%H:%M:%S', time.localtime(time.time()))),filename)
+    # num = data.shape[0]
+    data.columns = columns
+    columns = columns[:-1]#去掉标签列
+    np.set_printoptions(precision=4)
+    ###########   scaler time to [0,1]############################
+    scaler = MinMaxScaler(feature_range=(-1, 1))
+    for i in columns:
+        # every column
+        scale_a = scaler.fit_transform(np.array(data.loc[:, i].values.astype(np.float64)).reshape(-1, 1))
+        # scale_a = np.around(scale_a, decimals=3)
+        data.loc[:, i] = scale_a
+        writelog('scaler sizes {},ndim {}'.format(scale_a.shape,scale_a.ndim), filename)
+
+    # np.set_printoptions(suppress=True,precision=3)
+    ############# write file ############################################
+    data.to_csv(write_url, sep=' ',index=False, header=False, mode='w', float_format='%.6f')  # write_url
+    writelog('file named:{} {}'.format(filename,'*'*40))
+    writelog('finished at:{}'.format(time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time()))),filename)
 
 
 if __name__ == "__main__":
@@ -327,21 +358,8 @@ if __name__ == "__main__":
     # requests = tp.makeRequests(job,func)
     # [pool.putRequest(req) for req in requests]
     # pool.wait()
-
-
-    """多进程"""
-    source_urls = [os.path.join(source_addr,addr) for addr in addrs]
-    dire_urls = [os.path.join(dire_addr,'timscal',os.path.splitext(addr)[0]+'.txt') for addr in addrs]
-    # print('dire_urls:\n',dire_urls)
-    # print('source_urls:\n',source_urls)
-    # exit()
-    if not os.path.exists(os.path.dirname(dire_urls[0])):
-        os.makedirs(os.path.dirname(dire_urls[0]))
-
     # exit()
     # job(source_urls[1],dire_urls[1])#,interrupt_points[1]
-
-
     # exit()
     # p1 = mp.Process(target=job,args=(source_url,dire_url),name='p1')
     # p1.start()
@@ -350,16 +368,21 @@ if __name__ == "__main__":
     # print(dire_url)
     # exit()
     """多进程"""
+    source_urls = [os.path.join(source_addr,addr) for addr in addrs]
+    dire_urls = [os.path.join(dire_addr,'data',os.path.splitext(addr)[0]+'.txt') for addr in addrs]
+    # print('dire_urls:\n',dire_urls)
+    # print('source_urls:\n',source_urls)
+    # exit()
+    if not os.path.exists(os.path.dirname(dire_urls[0])):
+        os.makedirs(os.path.dirname(dire_urls[0]))
+
+    """多进程"""
     pool = mp.Pool(processes=len(source_urls))
-    pool.map(job, zip(source_urls, dire_urls),)
+    pool.map(scaler, zip(source_urls, dire_urls),)
     pool.close()
     pool.join()
 
     """处理Attack_free_dataset2 id只有导致异常问题"""
-
-    # writelog('all processing and program finished at:', 'program run at:', time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
-    # writelog('all processes finished at:{}'.format(time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time()))))
-
     print('program  finished at:',  time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
 
 
