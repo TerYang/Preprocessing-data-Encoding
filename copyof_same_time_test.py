@@ -857,19 +857,26 @@ if __name__ == "__main__":
     # pool.join()
 
     """scalar to -1,1, full saclar """
-    source = '/home/gjj/dataset/hacking/SAME_ID_diff_time'
+    source = '/home/gjj/dataset/hacking/ignore_ID_diff_time'
+    # source = '/home/gjj/dataset/intrusion/same_ID_diff_time'
+    # source = '/home/gjj/dataset/hacking/SAME_ID_diff_time'
     # dest = '/home/gjj/dataset/hacking/sameFullScalarZeroToPositive'
-    dest = '/home/gjj/dataset/hacking/SAMEFullScalarZeroToPositive'
+    # dest = '/home/gjj/dataset/hacking/SAMEFullScalarZeroToPositive'
+    # dest = '/home/gjj/dataset/intrusion/SAMEFullScalarZeroToPositive'
+    dest = '/home/gjj/dataset/hacking/ignoreFullScalarZeroToPositive'
     raws = [os.path.join(source,f) for f in os.listdir(source) if '.pkl' in f]
+
     for raw in raws:#list(zip(raws,destes)):
+
         des = os.path.join(dest,os.path.basename(raw))
         url = os.path.splitext(des)[0]+'.txt'
-    
+
         if os.path.exists(des) and os.path.exists(url):
             continue
 
         print('source:%s'%raw)
         print('des:%s'%des)
+        print('url:%s'%url)
         # continue
         data = pd.read_pickle(raw, compression='zip')
         # _data = data.copy()
@@ -878,18 +885,22 @@ if __name__ == "__main__":
         print(filename, datashape,end=',')
         # print(data.loc[:10,:])
         columns = data.shape[1]
-        c_max = [0 for _ in range(columns-1)]
-
+        c_max = [0 for _ in range(columns)]
         scaler = MinMaxScaler(feature_range=(0, 1))  # copy=True,
+        if 'Attack_free_dataset' in raw:
+            scale_a = scaler.fit_transform(data.loc[:, :].values.astype(np.float64)).reshape((-1, columns))
+            data = pd.DataFrame(scale_a)
 
-        scale_a = scaler.fit_transform(data.loc[:, :columns-2].values.astype(np.float64)).reshape((-1, columns-1))
-        data.loc[:, :columns - 2] = scale_a
+
+        else:
+            c_max = [0 for _ in range(columns - 1)]
+
+            scale_a = scaler.fit_transform(data.loc[:, :columns-2].values.astype(np.float64)).reshape((-1, columns-1))
+            data.loc[:, :columns - 2] = scale_a
         # if scaler.data_max_ >c_max:
         #     c_max = scaler.data_max_
         c_max = list(map(d, c_max, scaler.data_max_))
 
-        print('data:{}'.format(data.shape),end=',')
-        print('scale_a.shape:{}'.format(scale_a.shape), end=',')
         if os.path.exists(des):
             pass
         else:
@@ -900,6 +911,8 @@ if __name__ == "__main__":
         else:
             data.to_csv(url, sep=' ', index=False, header=False, mode='w', encoding='utf-8', float_format='%.6f',
                            index_label=None)
+        print('data:{}'.format(data.shape),end=',')
+        print('scale_a.shape:{}'.format(scale_a.shape), end=',')
         # print(_data.loc[data.shape[0]-10:,:])
         print()
         print('c_max:{}'.format(c_max))
